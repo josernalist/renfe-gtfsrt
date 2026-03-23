@@ -1,0 +1,38 @@
+name: Fetch Renfe GTFS-RT (Trip Updates LD)
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # cada 5 minutos (UTC)
+  workflow_dispatch: {}       # permite lanzarlo manualmente desde GitHub
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-gtfsrt:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch GTFS-RT
+        run: |
+          python scripts/fetch_gtfsrt.py
+
+      - name: Commit & push si hay cambios
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: gtfsrt $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            git push
+          else
+            echo "Sin cambios; nada que commitear."
+          fi
